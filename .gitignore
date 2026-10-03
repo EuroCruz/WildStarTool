@@ -1,0 +1,13 @@
+/target
+/dist
+**/*.rs.bk
+*.pdb
+my_names.lua
+
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

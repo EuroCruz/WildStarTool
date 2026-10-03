@@ -1,0 +1,10 @@
+[build]
+target = "x86_64-pc-windows-gnullvm"
+
+[target.x86_64-pc-windows-gnullvm]
+linker = "x86_64-w64-mingw32-clang"
+rustflags = ["-L", "native=../ACLibriary/.cargo/static/x64"]
+
+[target.i686-pc-windows-gnullvm]
+linker = "i686-w64-mingw32-clang"
+rustflags = ["-L", "native=../ACLibriary/.cargo/static/x86"]
