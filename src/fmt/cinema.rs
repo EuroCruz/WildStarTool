@@ -79,7 +79,7 @@ fn elem<S: Io>(s: &mut S, x: &mut Elem) -> Res<()> {
 impl Cxa {
     fn walk<S: Io>(&mut self, s: &mut S) -> Res<()> {
         s.konst(9u16)?;
-        s.note("Complex animations: Id, then Elements in order.\nType picks the element class (Animation, Animation_Target, Say, Sound, Lookat_Target, Listener, Expression...);\nHash1..Hash4, Value1..Value3, Flag1/Flag2 are read by the game, their meaning is not confirmed");
+        s.note("Complex animations: Id, then Elements in order.\nType picks the element class (Animation, Animation_Target, Say, Sound, Lookat_Target, Listener, Expression...)");
         s.tagged("Anims", &mut self.anims, b"2AXC", b"DNEC", |s, a| {
             s.hash("Id", &mut a.id)?;
             s.tagged("Elements", &mut a.elems, b"MELE", b"DNEC", elem)

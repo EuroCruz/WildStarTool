@@ -503,6 +503,78 @@ mod t {
         packs(p, f)
     }
 
+    #[test]
+    #[ignore]
+    fn export_flash_and_unknown_names() {
+        let Ok(out) = std::env::var("WST_EXPORT") else { return };
+        let out = PathBuf::from(out);
+        let mut unknown = std::collections::BTreeSet::new();
+        let mut found = std::collections::BTreeMap::new();
+        for dir in ["SUBPC", "SUBXE", "SUBPS3"] {
+            let g = PathBuf::from(r"C:\Users\Andrew\Desktop\Saboteur\GAMEFILES").join(dir);
+            let to = out.join(dir);
+            std::fs::create_dir_all(&to).unwrap();
+            let mut n = 0;
+            let mut each = |d: &[u8]| {
+                let Ok(pk) = parse(d) else { return };
+                for (x, b) in pk.recs.iter().zip(Albs.bodies(d, &pk)) {
+                    let h = if x.hash == 0 { x.tag } else { x.hash };
+                    let name = crate::names::name(h);
+                    if name.is_none() && h != 0 {
+                        unknown.insert(h);
+                        let u = unzip(b);
+                        let body = u.as_deref().unwrap_or(b);
+                        let mut run = Vec::new();
+                        for &c in body.iter().take(4096).chain([0u8].iter()) {
+                            if (0x20..0x7f).contains(&c) {
+                                run.push(c);
+                                continue;
+                            }
+                            if run.len() >= 3 {
+                                let s = String::from_utf8_lossy(&run).into_owned();
+                                let base = s.rsplit(['\\', '/']).next().unwrap_or(&s).to_string();
+                                let stem = base.rsplit_once('.').map_or(base.clone(), |x| x.0.to_string());
+                                for c in [s.clone(), base.clone(), stem.clone(), format!("{stem}.tex"), format!("{stem}.dds"), format!("{stem}.mesh"), format!("{base}.tex"), format!("{base}.dds")] {
+                                    if crate::names::hash(&c) == h {
+                                        found.insert(h, c);
+                                    }
+                                }
+                            }
+                            run.clear();
+                        }
+                    }
+                    if !is_flash(b) {
+                        continue;
+                    }
+                    let file = name.map_or(format!("0x{h:08x}"), |s| s.replace(['\\', '/', ':'], "_"));
+                    let file = if file.to_lowercase().ends_with(".gfx") { file } else { format!("{file}.gfx") };
+                    let body = unflash(b).unwrap_or_else(|| b.to_vec());
+                    let p = to.join(&file);
+                    if std::fs::metadata(&p).map(|m| m.len() as usize == body.len()).unwrap_or(false) {
+                        continue;
+                    }
+                    std::fs::write(p, body).unwrap();
+                    n += 1;
+                }
+            };
+            for p in ac_core::fs::walk(&g).unwrap().into_iter().filter(|p| p.to_string_lossy().to_lowercase().ends_with("pack")) {
+                let head = Input::open(&p).unwrap().head(4);
+                if matches!(head.as_slice(), b"00PM" | b"MP00") {
+                    packs(&p, &mut each);
+                } else if endian(&head).is_some() {
+                    each(&std::fs::read(&p).unwrap());
+                }
+            }
+            eprintln!("{dir}: {n} flash movies");
+        }
+        let list: String = unknown.iter().map(|h| format!("0x{h:08x}\n")).collect();
+        std::fs::write(out.join("unknown_pack_names.txt"), list).unwrap();
+        let names: String = found.iter().map(|(h, n)| format!("0x{h:08x}\t{n}\n")).collect();
+        std::fs::write(out.join("found_pack_names.txt"), names).unwrap();
+        eprintln!("{} names found in the bodies", found.len());
+        eprintln!("{} pack entries without a name", unknown.len());
+    }
+
     fn packs(p: &Path, mut f: impl FnMut(&[u8])) {
         let mut i = Input::open(p).unwrap();
         let h = i.head(8);

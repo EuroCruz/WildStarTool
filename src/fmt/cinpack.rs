@@ -444,7 +444,8 @@ impl Format for CinPack {
                 extra.push((Some("Flag".into()), Val::Int(flag as i64)));
             }
             let mut t = header(&rel, "one cinematic");
-            t.push((None, Val::Note("Elements in order: Type, then its values. Start/End or Time are seconds; Hash, Flag, Text, Value are\nread by the game (meaning not confirmed). CameraXSI Keys: { {3x4 matrix}, fov, {4 depth-of-field values}, coc }".into())));
+            t.push((None, Val::Note("Elements in order: Type, then its values. Start/End or Time are seconds.
+CameraXSI Keys: { {3x4 matrix}, fov, {4 depth-of-field values}, coc }".into())));
             t.push((Some("Elements".into()), Val::Tbl(elems.iter().map(|x| (None, dump_elem(x))).collect())));
             o.text(&rel, &Val::Tbl(t))?;
             list.push((None, entry(&rel, extra)));
@@ -455,7 +456,7 @@ impl Format for CinPack {
         let name = i.name.clone();
         let mut t = header(&name, self.about());
         t.extend(meta(self.id(), &name, e));
-        t.push((None, Val::Note("Cinematics in pack order, one .lua file each (the file name is the cinematic name).\nNew .lua files are added at the end. Flag: table flag (default 1, meaning not confirmed)".into())));
+        t.push((None, Val::Note("Cinematics in pack order, one .lua file each (the file name is the cinematic name).\nNew .lua files are added at the end. Flag: table flag (default 1)".into())));
         t.push((Some("Files".into()), Val::Tbl(list)));
         o.text(INDEX, &Val::Tbl(t))
     }

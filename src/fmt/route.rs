@@ -140,7 +140,7 @@ struct Knot {
 impl CinSplines {
     fn walk<S: Io>(&mut self, s: &mut S) -> Res<()> {
         s.magic(b"4LPS")?;
-        s.note("Curve: cubic segment coefficients, Table: arc-length lookup (0 to 1)\nFlags: four values whose meaning is not confirmed");
+        s.note("Curve: cubic segment coefficients, Table: arc-length lookup (0 to 1)");
         s.list("Splines", &mut self.splines, Len::U32, |s, p| {
             s.hash("Name", &mut p.name)?;
             s.f32("Length", &mut p.length)?;

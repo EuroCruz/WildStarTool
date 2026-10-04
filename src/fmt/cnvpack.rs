@@ -29,7 +29,7 @@ fn layout(t: u32, line: bool) -> Option<&'static str> {
     if line {
         Some(match &t.to_be_bytes() {
             b"SPKR" | b"NAME" | b"TGRT" | b"TXTC" => "u",
-            b"TXT2" => "uu",
+            b"TXT2" => "ux",
             b"CNDT" => "C",
             b"DELA" => "f",
             b"INF2" => "uuuuf",
@@ -58,6 +58,7 @@ fn layout(t: u32, line: bool) -> Option<&'static str> {
 enum V {
     F(f32),
     U(u32),
+    X(u32),
     H(u16),
     Y(u8),
     B(Vec<u8>),
@@ -90,6 +91,7 @@ fn read_block(r: &mut Reader, line: bool) -> Res<Block> {
             v.push(match c {
                 'f' => V::F(r.f32()?),
                 'u' => V::U(r.u32()?),
+                'x' => V::X(r.u32()?),
                 'h' => V::H(r.u16()?),
                 'y' => V::Y(r.u8()?),
                 'b' => {
@@ -128,7 +130,7 @@ fn write_block(w: &mut Writer, b: &Block) {
                 V::F(f) => {
                     w.f32(*f);
                 }
-                V::U(u) => {
+                V::U(u) | V::X(u) => {
                     w.u32(*u);
                 }
                 V::H(h) => {
@@ -184,6 +186,7 @@ fn one(x: &V) -> Val {
     match x {
         V::F(f) => float(*f),
         V::U(u) => hash_val(*u),
+        V::X(u) => Val::Raw(format!("0x{u:08x}")),
         V::H(h) => Val::Int(*h as i64),
         V::Y(y) => Val::Int(*y as i64),
         V::B(b) => blob(b),
@@ -256,6 +259,7 @@ fn load_block(v: &Val, line: bool) -> Result<(Option<u16>, Block), String> {
             vals.push(match c {
                 'f' => V::F(unfloat(p).ok_or_else(bad)?),
                 'u' => V::U(num(p).ok_or_else(bad)?),
+                'x' => V::X(num(p).ok_or_else(bad)?),
                 'h' => V::H(int(p).ok_or_else(bad)?),
                 'y' => V::Y(int(p).ok_or_else(bad)?),
                 'b' => V::B(unblob(p).ok_or_else(bad)?),
@@ -346,7 +350,8 @@ impl Format for CnvPack {
         let name = i.name.clone();
         let mut t = header(&name, self.about());
         t.extend(meta(self.id(), &name, e));
-        t.push((None, Val::Note("Conversations: { id, number, number, then tags in game order }. Tags are the game's own 4-letter names;\nLINE = { line index, number, tags... } (lines nest). A tag with no value is true".into())));
+        t.push((None, Val::Note("Conversations: { id, number, number, then tags in game order }. Tags are 4-letter names;
+LINE = { line index, number, tags... } (lines nest). TXT2 = { voice, text id from gametext.dlg }. A tag with no value is true".into())));
         let list = v
             .iter()
             .map(|c| {

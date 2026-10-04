@@ -91,7 +91,7 @@ impl Materials {
             }
         }
         (self.capacity, self.unknown) = (c[0], c[17]);
-        s.note("Sections in file order (the game's own tags): WSST render and texture states { state, value },\nWSCP CPU params { register, {x, y, z, w} }, WSPP/WSVP shader params, WSTX textures, WSPA passes, WSMA materials.\nIndexes point into those lists (-1 = none)");
+        s.note("Sections in file order: WSST render and texture states { state, value },\nWSCP CPU params { register, {x, y, z, w} }, WSPP/WSVP shader params, WSTX textures, WSPA passes, WSMA materials.\nIndexes point into those lists (-1 = none)");
         s.magic(b"TSSW")?;
         states(s, "RenderStates", &mut self.render, c[2])?;
         states(s, "TextureStates", &mut self.texture, c[4])?;

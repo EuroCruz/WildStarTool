@@ -207,12 +207,12 @@ impl Format for Luap {
                     None => prefixes.push((p.clone(), 1)),
                 }
             }
-            items.push((x, b, prefix, rel, packed, text.map(|t| t.1)));
+            items.push((x, b, prefix, rel, text.map(|t| t.1)));
         }
         let main = prefixes.iter().max_by_key(|p| p.1).map(|p| p.0.clone()).unwrap_or_default();
         let mut list = Vec::with_capacity(items.len());
         let mut used = HashSet::new();
-        for (x, b, prefix, rel, packed, source) in items {
+        for (x, b, prefix, rel, source) in items {
             let compiled = source.is_none();
             let (text, stripped) = match (source, &prefix) {
                 (Some(t), _) => (Some(t), false),
@@ -248,9 +248,6 @@ impl Format for Luap {
             if !compiled {
                 extra.push((Some("Compile".into()), Val::Bool(false)));
             }
-            if packed {
-                extra.push((Some("Compressed".into()), Val::Bool(true)));
-            }
             if let Some(p) = prefix.filter(|p| *p != main) {
                 extra.push((Some("Source".into()), Val::Str(p)));
             }
@@ -259,8 +256,9 @@ impl Format for Luap {
         let name = i.name.clone();
         let mut t = header(&name, self.about());
         t.extend(meta(self.id(), &name, e));
-        t.push((None, Val::Note(format!("Scripts in pack order, as .lua files next to this index (.luac = kept compiled).\nEdit them freely; new .lua files are added at the end. Scripts in {MODULES} are loaded at start.\nYour own scripts in {MINE} are run automatically when the game starts (France.OnEnter).\nSource: the path the game shows in Lua errors. Options (per script, or once in this index for all): Compressed = true (LZX, only the Xbox 360 game reads it),
-Strip = true (compile without debug info), Compile = false (store the source text, the game compiles it)"))));
+        t.push((None, Val::Note(format!("Scripts in pack order, as .lua files next to this index (.luac = kept compiled).\nEdit them freely; new .lua files are added at the end. Scripts in {MODULES} are loaded at start.\nYour own scripts in {MINE} are run automatically when the game starts (France.OnEnter).\nSource: the path the game shows in Lua errors. Options (per script, or once in this index for all):
+Strip = true (compile without debug info), Compile = false (store the source text, the game compiles it),
+Compressed = false (store without LZX compression; by default every script is compressed)"))));
         t.push((Some("Source".into()), Val::Str(main)));
         t.push((Some("Files".into()), Val::Tbl(list)));
         o.text(INDEX, &Val::Tbl(t))
@@ -272,7 +270,7 @@ Strip = true (compile without debug info), Compile = false (store the source tex
             Some(Val::Bool(b)) => *b,
             _ => d,
         };
-        let (packed, stripped, compiled) = (all("Compressed", false), all("Strip", false), all("Compile", true));
+        let (packed, stripped, compiled) = (all("Compressed", true), all("Strip", false), all("Compile", true));
         let mut list = Vec::new();
         for (_, v) in meta.key("Files").ok_or(Error::Bad("index.lua has no Files = { ... }"))?.items().iter().filter(|(_, v)| !matches!(v, Val::Note(_))) {
             let rel = entry_path(v)?;

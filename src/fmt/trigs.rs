@@ -133,7 +133,7 @@ fn trig<S: Io>(s: &mut S, t: &mut Trig) -> Res<()> {
 impl Trigs {
     fn walk<S: Io>(&mut self, s: &mut S) -> Res<()> {
         s.magic(b"JGRT")?;
-        s.note("Triggers: Type = Box, Zone, District, Polygon, SoundTrigger, RainTrigger (SpawnRegion has no data).\nVolumes: shapes as lists of points { x, y, z } (the game uses up to 10 points per shape).\nOther field names are neutral: the game reads them, their meaning is not confirmed");
+        s.note("Triggers: Type = Box, Zone, District, Polygon, SoundTrigger, RainTrigger (SpawnRegion has no data).\nVolumes: shapes as lists of points { x, y, z } (the game uses up to 10 points per shape)");
         s.list("Triggers", &mut self.list, Len::U32, trig)
     }
 

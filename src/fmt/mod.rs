@@ -1,16 +1,19 @@
 mod albs;
+mod anim;
 mod arch;
 mod bnk;
 mod cinema;
 mod cinpack;
 mod cnvpack;
 mod data;
+mod font;
 mod luap;
 mod map;
 mod materials;
 mod particle;
 mod pck;
 mod route;
+mod save;
 mod sound;
 mod terrain;
 mod tex;
@@ -231,6 +234,7 @@ pub trait Format: Sync {
 static ALL: &[&dyn Format] = &[
     &arch::Mega,
     &albs::Albs,
+    &anim::Animations,
     &pck::Pck,
     &bnk::Bnk,
     &arch::LooseFiles,
@@ -266,6 +270,8 @@ static ALL: &[&dyn Format] = &[
     &D::<trigs::Trigs>::new(),
     &D::<particle::Particles>::new(),
     &D::<materials::Materials>::new(),
+    &D::<font::Font>::new(),
+    &D::<save::Save>::new(),
 ];
 
 pub fn all() -> &'static [&'static dyn Format] {

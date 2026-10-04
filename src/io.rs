@@ -164,6 +164,9 @@ pub trait Io: Sized {
     fn magic(&mut self, m: &[u8; 4]) -> Res<()>;
     fn zero(&mut self, n: usize) -> Res<()>;
     fn note(&mut self, _: &str) {}
+    fn any(&mut self, _: &str, _: &mut Val) -> Res<()> {
+        Ok(())
+    }
     fn has(&self, _: &str) -> bool {
         true
     }
@@ -637,6 +640,10 @@ impl Io for Dump {
     fn note(&mut self, s: &str) {
         self.push("", Val::Note(s.to_string()));
     }
+    fn any(&mut self, k: &str, v: &mut Val) -> Res<()> {
+        self.push(k, v.clone());
+        Ok(())
+    }
 }
 
 pub struct Load {
@@ -710,6 +717,10 @@ impl Io for Load {
     }
     fn has(&self, k: &str) -> bool {
         self.cur.key(k).is_some()
+    }
+    fn any(&mut self, k: &str, v: &mut Val) -> Res<()> {
+        *v = self.take(k)?;
+        Ok(())
     }
     fn mode(&self) -> Mode {
         Mode::Load

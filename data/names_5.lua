@@ -1,4 +1,4 @@
--- WildStarTool dictionary, part 5 of 5: names of the hashes the game uses.
+-- WildStarTool dictionary, part 5 of 7: names of the hashes the game uses.
 -- Add your own lines: [0xHASH] = "name",
 Names = {
 	[0xcf8508c0] = [[CountrySide\alsace\town\mountains\P_CliffsSaar_Rock_C(16)]],

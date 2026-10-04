@@ -103,7 +103,8 @@ impl Particles {
             return crate::io::err("not a particle pack (no FX00/FX01 magic)");
         }
         let fx01 = self.version == FX01;
-        s.note("Effects: Id, then its Emitters. Values, Hash, Flags, Shape, Curve and Tracks are read by the game in this order;\nfield meanings are not confirmed. Tracks: keys { Time, Mode (1, 2 or 3), Values }. Always big-endian");
+        s.note("Effects: Id, then its Emitters. Values, Hash, Flags, Shape, Curve, Tracks in read order.
+Tracks: keys { Time, Mode (1, 2 or 3), Values }. Always big-endian");
         s.list("Effects", &mut self.effects, Len::U32, |s, x| {
             s.hash("Id", &mut x.id)?;
             s.list("Emitters", &mut x.emitters, Len::U8, |s, e| emitter(s, e, fx01))
