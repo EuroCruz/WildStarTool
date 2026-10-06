@@ -300,6 +300,11 @@ fn parse_as(d: &[u8], e: Endian) -> Res<Vec<Obj>> {
     Ok(v)
 }
 
+#[cfg(test)]
+pub(super) fn is_nodes(d: &[u8], e: Endian) -> bool {
+    parse_as(d, e).is_ok()
+}
+
 fn write(v: &[Obj], e: Endian) -> Vec<u8> {
     let mut w = Writer::new(e);
     w.u32(0).u32(v.len() as u32);

@@ -148053,6 +148053,7 @@ Names = {
 	[0xee3596ba] = "mn_lazare_seg_a2",
 	[0xee359c20] = "France_127_ImageLOD0",
 	[0xee35b943] = [[StitchNodes_France\AIPathPt_StitchNode_16317441_004]],
+	[0xee35bb1b] = [[Missions\garages\Garage_LaV_Tank_Locator]],
 	[0xee35c09b] = [[CountrySide\alsace\walhal_interiors\silo\Walhal_Silo\Bunker_PFloor_X4Z4_A]],
 	[0xee35c0fc] = [[StitchNodes_France\AIPathPt_StitchNode_16451585_023]],
 	[0xee35c6eb] = "Demo_Terrain_vPs3_000_012_Mask",

@@ -268,17 +268,12 @@ pub struct Albs;
 
 impl Albs {
     fn bodies<'a>(&self, d: &'a [u8], p: &Pack) -> Vec<&'a [u8]> {
-        let main = p.base + p.recs.iter().filter(|x| !x.late()).map(|x| x.size as usize).sum::<usize>();
-        let mut late = main;
+        let mut at = p.base;
         p.recs
             .iter()
             .map(|x| {
-                if x.late() {
-                    late += x.size as usize;
-                    &d[late - x.size as usize..late]
-                } else {
-                    &d[p.base + x.at as usize..][..x.size as usize]
-                }
+                at += x.size as usize;
+                &d[at - x.size as usize..at]
             })
             .collect()
     }
@@ -311,7 +306,7 @@ impl Format for Albs {
     fn list(&self, i: &mut Input) -> Res<Vec<Item>> {
         let d = i.all()?;
         let p = parse(d)?;
-        Ok(self.bodies(d, &p).iter().zip(&p.recs).zip(&p.kinds).map(|((b, x), k)| Item { name: format!("{}{}", names::label(x.key()), ext_of(b, p.e, *k, false)), size: x.size as u64, note: String::new() }).collect())
+        Ok(self.bodies(d, &p).iter().zip(&p.recs).zip(&p.kinds).map(|((b, x), k)| Item { name: format!("{}{}", names::label(x.key()), ext_of(b, p.e, k.or(x.late().then_some(LATE)), false)), size: x.size as u64, note: String::new() }).collect())
     }
     fn unpack(&self, i: &mut Input, o: &mut Out) -> Res<PathBuf> {
         let name = i.name.clone();
@@ -324,6 +319,7 @@ impl Format for Albs {
         let mut gpu = None;
         for (n, (x, b)) in p.recs.iter().zip(&bodies).enumerate() {
             let kind = p.kinds[n];
+            let group = kind.or(x.late().then_some(LATE));
             let zdef = kind == Some(ZIP);
             let t = tex::parse(b, e);
             let dds = t.as_ref().filter(|_| !o.opts.raw).and_then(|t| tex::to_dds(t, e));
@@ -338,8 +334,8 @@ impl Format for Albs {
                     }
                     (d, ".dds", t.unc, Some(clean(&t.name)))
                 }
-                (_, _, Some(u)) if zipped => (u, ext_of(u, e, kind, true), u.len() as u32, None),
-                _ => (b, ext_of(b, e, kind, false), unc_of(b, e, x.size), None),
+                (_, _, Some(u)) if zipped => (u, ext_of(u, e, group, true), u.len() as u32, None),
+                _ => (b, ext_of(b, e, group, false), unc_of(b, e, x.size), None),
             };
             let gfx = if o.opts.raw { None } else { unflash(body) };
             let body: &[u8] = gfx.as_deref().unwrap_or(body);
@@ -393,7 +389,7 @@ impl Format for Albs {
         t.push((None, Val::Note(
             "Files in game order; each is a file next to this index. New files put here are added at the end.\n\
              Kind: group of the file (0 meshes, 1 textures, 2 physics, 3 path graphs, 4 AI fences, 6 sounds, 7 flash movies, 8 wsd);\n\
-             Late: stored after all other files. File names come from the name dictionary (0x... when unknown)\n\
+             Late: listed without a hash (edit nodes, .wsd). File names come from the name dictionary (0x... when unknown)\n\
              Hash: name hash (when it differs from the file name), Unpacked: size in memory (when it differs from the computed one)\n\
              .gfx: flash movie (Scaleform, opens in JPEXS FFDec); Compressed: stored compressed (CFX) in the pack"
                 .into(),
@@ -488,7 +484,7 @@ impl Format for Albs {
             w.u32(r.hash).u32(r.at).u32(r.size).u32(r.unc).u32(r.zero).u32(r.tag);
         }
         out.put(&w.finish())?;
-        for (_, _, b) in items.iter().filter(|x| !x.1.late()).chain(items.iter().filter(|x| x.1.late())) {
+        for (_, _, b) in &items {
             out.put(b)?;
         }
         Ok(())
@@ -628,6 +624,34 @@ mod t {
                 eprintln!("  {b}");
             }
             assert!(bad.is_empty());
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn late_bodies_are_edit_nodes() {
+        for dir in ["SUBPC", "SUBXE", "SUBPS3"] {
+            let g = PathBuf::from(r"C:\Users\Andrew\Desktop\Saboteur\GAMEFILES").join(dir);
+            let (mut ok, mut bad) = (0, 0);
+            for p in ac_core::fs::walk(&g).unwrap().into_iter().filter(|p| p.to_string_lossy().to_lowercase().ends_with("pack")) {
+                if !matches!(Input::open(&p).unwrap().head(4).as_slice(), b"00PM" | b"MP00") {
+                    continue;
+                }
+                packs(&p, |d| {
+                    let Ok(pk) = parse(d) else { return };
+                    for (x, b) in pk.recs.iter().zip(Albs.bodies(d, &pk)) {
+                        if x.late() && x.size > 0 {
+                            if super::super::wsd::is_nodes(b, pk.e) {
+                                ok += 1;
+                            } else {
+                                bad += 1;
+                            }
+                        }
+                    }
+                });
+            }
+            eprintln!("{dir}: {ok} edit nodes, {bad} bad");
+            assert_eq!(bad, 0);
         }
     }
 
